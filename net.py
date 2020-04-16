@@ -97,9 +97,49 @@ def dictplay(M):
             else:
                 break
 
+    from math import ceil
 
-    print(xx)
-    print(yy)
+    for i in range(M+1):
+        x = i*h
+        y = 1 - x**2
+        ikeys = filter(lambda ij: ij[0] == i, inds.keys())
+        #print(list(ikeys))
+        #print(ikeys)
+        #j = max(ikeys, key=lambda ij: ij[1], default=(-1,-1))[1] + 1
+        j = y / h
+        print(f'j={j}', end='\t')
+        #j = int(j) + 1
+        j = ceil(j)
+        print(f'j={j}')
+        if (i,j) not in inds.keys():
+            inds[(i,j)] = k
+            xx.append(x)
+            yy.append(y)
+            k += 1
+    #'''
+    for j in range(M+1):
+        y = j*h
+        x = np.sqrt(1-y)
+        jkeys = filter(lambda ij: ij[1] == j, inds.keys())
+        #print(list(jkeys))
+        #print(jkeys)
+        #i = max(jkeys, key=lambda ij: ij[0], default=(-1,-1))[0] + 1
+        i = x / h
+        print(f'i={i}', end='\t')
+        i = ceil(i)
+        print(f'i={i}')
+        #ktemp = inds[(i-1,j)]
+        #if (x, y) == (xx[ktemp], yy[ktemp]):
+        #    print((i,j))
+        if (i,j) not in inds.keys():
+            inds[(i,j)] = k
+            xx.append(x)
+            yy.append(y)
+            k += 1
+    #'''
+
+    #print(xx)
+    #print(yy)
     return inds, xx, yy
 
     
@@ -125,14 +165,20 @@ def main():
     #print(inds)
 
     inds, xx, yy = dictplay(M)
-    print(inds)
+    print(list(zip(xx, yy)))
+    #print(inds)
     h = 1/M
     for ij, k in inds.items():
-        print(ij)
-        print(k)
+        #print(ij)
+        #print(k)
         x, y = xx[k], yy[k]
-        #plt.text(x,y,ij)
-        plt.text(x,y,np.round(1 - x**2 - y,3))
+        plt.scatter(x,y, color='black', s=1)
+        plt.text(x,y,ij)
+        #plt.text(x,y,k)
+        #plt.text(x,y,np.round(1 - x**2 - y,3))
+    l = np.linspace(0,1,100)
+    plt.plot(l, 1 - l**2, color='black', linewidth=0.5)
+    plt.grid()
 
 
 
