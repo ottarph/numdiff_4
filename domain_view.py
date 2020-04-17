@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def plot_domain():
 
-    plt.figure()
+    plt.figure(figsize=(10,10))
 
     x = np.linspace(0,1,100)
     y0 = np.zeros_like(x)
