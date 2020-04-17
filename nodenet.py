@@ -1,9 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+#from enum import Enum
+#class Nodetype(Enum):
+class Nodetype:
+    #'''
+    INNER = 1
+    EDGE = 2
+    DIRICH = 3
+    NEUMANN = 4
+    #'''
+    #def __repr__(self):
+    #    return self.name[0]
+    '''
+    INNER = 'I'
+    EDGE = 'E'
+    DIRICH = 'D'
+    NEUMANN = 'N'
+    '''
+
 class Node:
 
-    def __init__(self, i, j, x, y, k):
+    def __init__(self, i, j, x, y, k, nodetype=None):
         self.i = i
         self.j = j
         self.x = x
@@ -14,23 +32,16 @@ class Node:
         self.E = None
         self.S = None
         self.W = None
+
+        self.nodetype = nodetype
     
-        self.neighbours = {'N': self.N, 'E': self.E, 'S': self.S, 'W': self.W}
 
     def __repr__(self):
         return f'({self.i}, {self.j})'
+
+    def neighbours(self):
+        return {'N': self.N, 'E': self.E, 'S': self.S, 'W': self.W}
     
-    def add_neighbours(self, N=None, E=None, S=None, W=None):
-        if N != None:
-            print('ye')
-            self.N = N
-        if E != None:
-            self.E = E
-        if S != None:
-            self.S = S
-        if W != None:
-            self.W = W
-        self.neighbours = {'N': self.N, 'E': self.E, 'S': self.S, 'W': self.W}
 
 
 class Net:
@@ -38,9 +49,12 @@ class Net:
 
     def __init__(self, M):
         self.M = M
-        self.k = 0
-        self.nodes = []
-        self.grid = dict()
+        self.h = 1/M
+
+        self.k = 0 # Counter for indexing
+
+        self.nodes = [] # holds all nodes
+        self.grid = dict() # Holds only grid nodes, i.e. (xi,yj) = (ih,jh)
 
     def __repr__(self):
         return str([str(p) for p in self.nodes])
@@ -101,10 +115,10 @@ def build_interior(net):
             if w in atlas:
                 p.W = net.grid[w]
 
+
 def build_boundary(net):
     
     M = net.M
-    h = 1/M
     atlas = net.grid.keys()
 
     for i in range(M):
@@ -116,17 +130,49 @@ def build_boundary(net):
         i = max(filter(lambda ij: ij[1]==j, atlas), key= lambda ij: ij[0])[0]
         q = net.grid[(i,j)]
         net.add_edge_nodes(q)
-    
+
+def label_nodes(net):
+
+    M = net.M
+    atlas = net.grid.keys()
+
+    for q in net.grid.values():
+        q.nodetype = Nodetype.INNER
+
+    for i in range(M):
+        j = max(filter(lambda ij: ij[0]==i, atlas), key= lambda ij: ij[1])[1]
+        q = net.grid[(i,j)]
+        q.nodetype = Nodetype.EDGE
+        if q.N != None:
+            q.N.nodetype = Nodetype.NEUMANN
+        if q.E != None:
+            q.E.nodetype = Nodetype.NEUMANN
+    for j in range(M):
+        i = max(filter(lambda ij: ij[1]==j, atlas), key= lambda ij: ij[0])[0]
+        q = net.grid[(i,j)]
+        q.nodetype = Nodetype.EDGE
+        if q.N != None:
+            q.N.nodetype = Nodetype.NEUMANN
+        if q.E != None:
+            q.E.nodetype = Nodetype.NEUMANN
+
+    for i in (0,):
+        for j in range(M):
+            q = net.grid[(i,j)]
+            q.nodetype = Nodetype.DIRICH
+    for j in (0,):
+        for i in range(M):
+            q = net.grid[(i,j)]
+            q.nodetype = Nodetype.DIRICH
+    net.grid[(0,M-1)].N.nodetype = Nodetype.DIRICH
+    net.grid[(M-1,0)].E.nodetype = Nodetype.DIRICH
 
 
-def main():
-
-    net = Net(10)
-    build_interior(net)
-    build_boundary(net)
-
+def plot_net(net):
+    plt.figure()
     for p in net.nodes:
-        plt.text(p.x, p.y, (p.k))
+        #plt.text(p.x, p.y, (p.k))
+        plt.text(p.x, p.y, p.nodetype)
         plt.scatter(p.x, p.y, s=16)
         for q in [p.N, p.E, p.S, p.W]:
             if q != None:
@@ -135,9 +181,20 @@ def main():
     xx = np.linspace(0,1,100)
     yy = 1 - xx**2
     plt.plot(xx, yy, 'k--', linewidth=0.6, label='$\partial \Omega$')
+    #plt.fill_between(xx, np.zeros_like(xx), yy, color='blue', alpha=0.3)
     
     plt.legend()
     plt.grid()
+
+
+def main():
+    M = 10
+    net = Net(M)
+    build_interior(net)
+    build_boundary(net)
+    label_nodes(net)
+
+    plot_net(net)
     plt.show()
 
 
