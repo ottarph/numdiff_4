@@ -56,7 +56,20 @@ class Net:
         if q.N == None:
             x = q.x
             y = 1 - x**2
-            n = Node()
+            n = Node(None, None, x, y, self.k)
+            self.nodes.append(n)
+            self.k += 1
+            q.N = n
+            n.S = q
+        if q.E == None:
+            y = q.y
+            x = np.sqrt(1 - y)
+            e = Node(None, None, x, y, self.k)
+            self.nodes.append(e)
+            self.k += 1
+            q.E = e
+            e.W = q
+
 
 def build_interior(net):
 
@@ -92,24 +105,38 @@ def build_boundary(net):
     
     M = net.M
     h = 1/M
+    atlas = net.grid.keys()
+
+    for i in range(M):
+        j = max(filter(lambda ij: ij[0]==i, atlas), key= lambda ij: ij[1])[1]
+        q = net.grid[(i,j)]
+        net.add_edge_nodes(q)
+
+    for j in range(M):
+        i = max(filter(lambda ij: ij[1]==j, atlas), key= lambda ij: ij[0])[0]
+        q = net.grid[(i,j)]
+        net.add_edge_nodes(q)
     
 
 
 def main():
 
-    net = Net(5)
-    print(net)
+    net = Net(10)
     build_interior(net)
-    #print(net)
+    build_boundary(net)
 
     for p in net.nodes:
-        print(p)
-        #plt.text(p.x, p.y, (p.k))
+        plt.text(p.x, p.y, (p.k))
         plt.scatter(p.x, p.y, s=16)
         for q in [p.N, p.E, p.S, p.W]:
             if q != None:
                 plt.plot([p.x,q.x], [p.y, q.y], 'k-', linewidth=0.4)
+
+    xx = np.linspace(0,1,100)
+    yy = 1 - xx**2
+    plt.plot(xx, yy, 'k--', linewidth=0.6, label='$\partial \Omega$')
     
+    plt.legend()
     plt.grid()
     plt.show()
 
