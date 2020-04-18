@@ -1,4 +1,5 @@
-.ipynb_checkpoints/*
+.ipynb_checkpoints
 *.png
 *.pdf
 ex4.ipynb
+__pycache__
