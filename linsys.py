@@ -9,7 +9,7 @@ from nodenet import Net, build_boundary, build_interior, plot_net, Nodetype, lab
 
 def gen_U_h(net, u0=lambda x,y: 0):
 
-    N = net.k+1
+    N = net.k
     U = np.zeros(N, dtype=float)
 
     for p in net.nodes:
@@ -19,7 +19,7 @@ def gen_U_h(net, u0=lambda x,y: 0):
 
 def gen_F_h(net, f, gd=lambda x,y: 0, gn=lambda x,y: 0):
 
-    N = net.k+1
+    N = net.k
     F = np.zeros(N, dtype=float)
 
     for p in net.nodes:
@@ -42,7 +42,7 @@ def gen_F_h(net, f, gd=lambda x,y: 0, gn=lambda x,y: 0):
 
 def gen_A_h(net):
 
-    N = net.k+1
+    N = net.k
     N2 = N**2
 
     A = dok_matrix((N,N), dtype=float)
@@ -61,8 +61,8 @@ def gen_A_h(net):
 
         elif P.nodetype == Nodetype.EDGE:
             n, e, s, w = P.N.k, P.E.k, P.S.k, P.W.k
-            xi_n = ( p.N.y - p.y ) / net.h
-            xi_e = ( p.E.x - p.x ) / net.h
+            xi_n = ( P.N.y - P.y ) / net.h
+            xi_e = ( P.E.x - P.x ) / net.h
             xi_n_inv = 1.0 / xi_n
             xi_e_inv = 1.0 / xi_e
             chi_n = 2.0 / (1.0 + xi_n)
@@ -76,18 +76,45 @@ def gen_A_h(net):
 
 
         elif P.nodetype == Nodetype.DIRICH:
-            A[i,i] = 1.0
+            A[p,p] = 1.0
 
 
         elif P.nodetype == Nodetype.NEUMANN:
+            theta = np.arctan( 1 / (2*P.x) )
+            if P.W != None:
+                dx = P.x - P.W.x
+                dy = net.h
+            else:
+                dx = net.h
+                dy = P.y - P.S.y
 
-            s, w, r = P.S.k, P.W.k, p.S.W.k
+            if P.S != None:
+                R = P.S.W
+            else:
+                R = P.W.S
+            r = R.k
 
-            nx, ny = 2.0*P.x, 1.0
-            nnorm = np.sqrt(nx**2 + ny**2)
-            nx, ny = nx/nnorm, ny/nnorm
+            if dx / np.cos(theta) < dy / np.sin(theta): # x-intersection is closest
+                # Approximate Q by R and R.N
+                rn = R.N.k
+                d = dx / np.cos(theta)
+                hp = d * np.sin(theta)
 
-            raise NotImplementedError
+                A[p,r]  = -hp / (net.h * d)
+                A[p,rn] = (hp - net.h) / (net.h * d)
+                A[p,p]  = 1 / d
+
+            
+            else: # y-intersection closest
+                # Approximate Q by R and R.E
+                re = R.E.k
+                d = dy / np.sin(theta)
+                hp = d*np.cos(theta)
+
+                A[p,r]  = -hp / (net.h * d)
+                A[p,re] = (hp - net.h) / (net.h * d)
+                A[p,p]  = 1 / d
+
 
 
         else:
@@ -99,7 +126,7 @@ def gen_A_h(net):
 
 def main():
     
-    M = 5
+    M = 2
 
     net = Net(M)
 
@@ -116,6 +143,8 @@ def main():
     print(U_h)
     F_h = gen_F_h(net, f=f)
     print(F_h)
+    A_h = gen_A_h(net)
+    print(A_h.todense())
 
     plt.show()
     

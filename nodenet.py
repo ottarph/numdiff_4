@@ -166,6 +166,9 @@ def label_nodes(net):
 
 
 def plot_net(net):
+    """
+        Horribly inefficient for M greater than ca. 30
+    """
     plt.figure()
     for p in net.nodes:
         plt.text(p.x, p.y, p.nodetype)
