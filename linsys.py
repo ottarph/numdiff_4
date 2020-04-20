@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+#import matplotlib.cm
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 
 from scipy.sparse import dok_matrix
 from scipy.sparse.linalg import spsolve
@@ -23,7 +26,7 @@ def gen_F_h(net, f, gd=lambda x,y: 0, gn=lambda x,y: 0):
     F = np.zeros(N, dtype=float)
 
     for p in net.nodes:
-        if p.nodetype == Nodetype.DIRICH: # Dirichlet boundary conditions
+        if p.nodetype == Nodetype.DIRICHLET: # Dirichlet boundary conditions
             F[p.k] = gd(p.x, p.y)
 
         elif p.nodetype == Nodetype.NEUMANN: # Neumann boundary conditions
@@ -75,7 +78,7 @@ def gen_A_h(net):
             A[p,p] = -chi_n * (1.0 + xi_n_inv) - chi_e * (1.0 + xi_e_inv)
 
 
-        elif P.nodetype == Nodetype.DIRICH:
+        elif P.nodetype == Nodetype.DIRICHLET:
             A[p,p] = 1.0
 
 
@@ -123,10 +126,22 @@ def gen_A_h(net):
     return A
 
 
+def plot3D(net, U):
+    plt.figure()
+    ax = plt.axes(projection='3d')
+
+    xx = np.array([p.x for p in net.nodes], dtype=float)
+    yy = np.array([p.y for p in net.nodes], dtype=float)
+    
+    ax.plot_trisurf(xx, yy, U, cmap=cm.viridis, edgecolor='none')
+
+    ax.set_xlabel("$x$")
+    ax.set_ylabel("$y$")
+
 
 def main():
     
-    M = 2
+    M = 32
 
     net = Net(M)
 
@@ -134,17 +149,15 @@ def main():
     build_boundary(net)
     label_nodes(net)
 
-    plot_net(net)
-
-    plt.show()
-
     f = lambda x,y: x**2 + y - 1
-    U_h = gen_U_h(net, u0=f)
-    print(U_h)
+
     F_h = gen_F_h(net, f=f)
-    print(F_h)
     A_h = gen_A_h(net)
-    print(A_h.todense())
+
+    solve = factorized(A_h.tocsc())
+    U_h = solve(F_h)
+
+    plot3D(net, U_h)
 
     plt.show()
     

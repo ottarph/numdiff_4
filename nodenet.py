@@ -1,21 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-#from enum import Enum
-#class Nodetype(Enum):
 class Nodetype:
-    #'''
+
     INNER = 1
     EDGE = 2
-    DIRICH = 3
+    DIRICHLET = 3
     NEUMANN = 4
-    #'''
-    '''
-    INNER = 'I'
-    EDGE = 'E'
-    DIRICH = 'D'
-    NEUMANN = 'N'
-    '''
+
 
 class Node:
 
@@ -156,13 +148,13 @@ def label_nodes(net):
     for i in (0,):
         for j in range(M):
             q = net.grid[(i,j)]
-            q.nodetype = Nodetype.DIRICH
+            q.nodetype = Nodetype.DIRICHLET
     for j in (0,):
         for i in range(M):
             q = net.grid[(i,j)]
-            q.nodetype = Nodetype.DIRICH
-    net.grid[(0,M-1)].N.nodetype = Nodetype.DIRICH
-    net.grid[(M-1,0)].E.nodetype = Nodetype.DIRICH
+            q.nodetype = Nodetype.DIRICHLET
+    net.grid[(0,M-1)].N.nodetype = Nodetype.DIRICHLET
+    net.grid[(M-1,0)].E.nodetype = Nodetype.DIRICHLET
 
 
 def plot_net(net):
